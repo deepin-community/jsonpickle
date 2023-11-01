@@ -1,0 +1,12 @@
+Tests: unittests
+Depends: python3-all,
+         python3-bson,
+         python3-feedparser,
+         python3-numpy,
+         python3-pandas,
+         python3-pytest,
+         python3-simplejson,
+         python3-sklearn,
+         python3-sqlalchemy,
+         python3-gmpy2,
+         @

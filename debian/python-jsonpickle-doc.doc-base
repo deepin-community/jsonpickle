@@ -1,0 +1,9 @@
+Document: jsonpickle
+Title: jsonpickle Documentation
+Abstract: This is the documentation of jsonpickle a library to serialize
+ arbitrary Python object graphs into JSON
+Section: Programming/Python
+
+Format: HTML
+Index: /usr/share/doc/python-jsonpickle-doc/html/index.html
+Files: /usr/share/doc/python-jsonpickle-doc/html/*.html
