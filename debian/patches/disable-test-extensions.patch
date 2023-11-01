@@ -1,0 +1,13 @@
+Description: Don't run test coverage, as it's meaningless for us and is error-prone.
+Index: jsonpickle/pytest.ini
+===================================================================
+--- jsonpickle.orig/pytest.ini
++++ jsonpickle/pytest.ini
+@@ -1,6 +1,6 @@
+ [pytest]
+ norecursedirs=dist build .tox .eggs
+-addopts=--doctest-modules --cov
++addopts=--doctest-modules
+ doctest_optionflags=ALLOW_UNICODE ELLIPSIS
+ filterwarnings=
+     # https://github.com/pytest-dev/pytest/issues/6928
