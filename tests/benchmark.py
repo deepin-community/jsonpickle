@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2008 John Paulett (john -at- paulett.org)
 # All rights reserved.
@@ -23,7 +22,7 @@ jsonpickle.set_preferred_backend('%s')
 pickled = jsonpickle.encode(doc)
 unpickled = jsonpickle.decode(pickled)
 if doc['feed']['title'] != unpickled['feed']['title']:
-    print 'Not a match'
+    print('Not a match')
 """
 
 

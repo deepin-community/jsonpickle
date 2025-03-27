@@ -1,14 +1,151 @@
-.. warning::
-    The next major release of jsonpickle (v3.0.0) will drop support for
-    Python 3.6 and earlier (including Python 2.7).
+v4.0.2
+======
+    * The unpickler is now more resilient to malformed "py/id" and "py/repr" data.
+      (+546)
+    * The unpickler is now more resilient to invalid "py/b85" and "py/b64" data.
+      (+547)
+    * The unpickler's support for read-only str attributes was improved.
+      (+548) (#478)
 
-.. note::
-   Users on older Python versions should pin requirements to ``jsonpickle<3.0.0``.
+v4.0.1
+======
+    * The unpickler is now more resilient to malformed "py/reduce", "py/set",
+      "py/tuple", "py/b64", "py/b85", and "py/iterator" input data. (+544) (+545)
+    * The test suite was updated to leverage more pytest features.
+    * The ``jsonpickle.compat`` module is no longer used. It is still provided
+      for backwards compatibility but it may be removed in a future version.
+
+v4.0.0
+======
+    * **Breaking Change**: Python 3.7 is no longer supported.
+    * **Breaking Change**: Support for pre-0.7.0 ``repr``-serialized objects is no
+      longer enabled by default. The ``safe`` option to ``decode()`` was changed from
+      ``False`` to ``True``. Users can still pass ``safe=False`` to ``decode()`` in order
+      to enable this feature for the purposes of loading older files, but beware that
+      this feature relies on unsafe behavior through its use of ``eval()``. Users are
+      encouraged to re-pickle old data in order to migrate away from the the unsafe loading
+      feature. (+514)
+    * The pickler no longer produces ``py/repr`` tags when pickling modules.
+      ``py/mod`` is used instead, as it is clearer and uses one less byte. (+514)
+    * The test suite no longer uses the deprecated ``datetime.datetime.utcnow()``
+      function. (+539)
+
+v3.4.2
+======
+    * The breaking changes from v4 were inadvertedly included in v3.4.1, which has
+      been yanked. This release remedies this by reverting the v4 changes.
+
+v3.4.1
+======
+    * Support decoding pandas dataframes encoded with versions 3.3.0 and older. (+536)
+
+v3.4.0
+======
+    * Officially support Python 3.12 in the GitHub Actions testing matrix, and update
+      GHA package versions used. (+524)
+    * Improve reproducibility of benchmarking commands on Linux by using taskset and
+      adding a "HOWTO" run benchmarks section in ``benchmarking/README.md``. (+526)
+    * The ``setup.cfg`` packaging configuration has been replaced by
+      ``pyproject.toml``. (+527)
+    * ``yaml`` is now supported as a jsonpickle backend. (+528)
+    * `OSSFuzz <https://github.com/google/oss-fuzz>`_ scripts are now available in
+      the ``fuzzing/`` directory. (+525)
+    * Pure-python dtypes are now preserved across ``encode()``/``decode()`` roundtrips
+      for the pandas extension. (#407) (+534)
+    * Pandas dataframe columns with an ``object`` dtype that contain multiple different
+      types within (e.g. a column of type ``list[Union[str, int]]``) now preserve the types
+      upon being roundtripped. (#457) (#358) (+534)
+    * Fix warnings in the test suite regarding numpy.compat usage. (#533) (+535)
+
+v3.3.0
+======
+    * The unpickler was updated to avoid using ``eval``, which helps improve its
+      security. Users can still pass ``safe=False`` to ``decode`` to use the old
+      behavior, though this is not recommended. (+513)
+    * Objects can now exclude specific attributes from pickling by providing a
+      ``_jsonpickle_exclude`` class or instance attribute. This attribute should contain
+      the list of attribute names to exclude when pickling the object.
+
+v3.2.2
+======
+    * A bug with the incorrect (de)serialization of NoneType objects has been fixed.
+      (+507)
+    * ``tests/benchmark.py`` was updated to avoid Python 2 syntax. (+508)
+    * The unpickler was updated to avoid creating temporary functions. (+508)
+    * Some basic scripts have been made to analyze benchmark results. (+511)
+    * Fix test suite compatibility with Numpy 2.x (+512)
+    * `setup.cfg` was updated to use `license_files` instead of `license_file`.
+
+v3.2.1
+======
+    * The ``ignorereserved`` parameter to the private ``_restore_from_dict()``
+      function has been restored for backwards compatibility. (+501)
+
+v3.2.0
+======
+    * Nested dictionaries in `py/state` are now correctly restored when
+      tracking object references. (+501) (#500)
+
+v3.1.0
+======
+    * `jsonpickle.ext.numpy.register_handlers` now provides options that are forwarded
+      to the `NumpyNDArrayHandler` constructor. (+489)
+    * Fix bug of not handling ``classes`` argument to `jsonpickle.decode`
+      being a dict. Previously, the keys were ignored and only values were
+      used. (+494)
+    * Allow the ``classes`` argument to `jsonpickle.pickle` to have class
+      objects as keys. This extends the current functionality of only having
+      class name strings as keys. (+494)
+    * The ``garden setup/dev`` action and ``requirements-dev.txt`` requirements file
+      now include test dependencies for use during development.
+    * Added support for Python 3.13. (+505) (#504)
+
+v3.0.4
+======
+    * Fixed an issue with django.SafeString and other classes inheriting from
+      str having read-only attribute errors (#478) (+481)
+    * The test suite was made compatible with `pytest-ruff>=0.3.0`. (+482)
+    * A `garden.yaml` file was added for use with the
+      `garden <https://crates.io/crates/garden-tools>_` command runner. (+486)
+    * The test suite was updated to avoid deprecated SQLALchemy APIs.
+    * The `jaraco.packaging.sphinx` documentation dependency was removed.
+
+v3.0.3
+======
+    * Compatibilty with Pandas and Cython 3.0 was added. (#460) (+477)
+    * Fixed a bug where pickling some built-in classes (e.g. zoneinfo) 
+      could return a ``None`` module. (#447)
+    * Fixed a bug where unpickling a missing class would return a different object
+      instead of ``None``. (+471)
+    * Fixed the handling of missing classes when setting ``on_missing`` to ``warn``
+      or ``error``. (+471)
+    * The test suite was made compatible with Python 3.12.
+    * The tox configuration was updated to generate code coverage reports.
+    * The suite now uses ``ruff`` to validate python code.
+    * The documentation can now be built offline when ``rst.linker`` and
+      ``jaraco.packaging.sphinx`` are not available.
+
+v3.0.2
+======
+    * Properly raise warning if a custom pickling handler returns None. (#433)
+    * Fix issue with serialization of certain sklearn objects breaking when
+      the numpy handler was enabled. (#431) (+434)
+    * Allow custom backends to not implement _encoder_options (#436) (+446)
+    * Implement compatibility with pandas 2 (+446)
+    * Fix encoding/decoding of dictionary subclasses with referencing (+455)
+    * Fix depth tracking for list/dict referencing (+456)
+
+v3.0.1
+======
+    * Remove accidental pin of setuptools to versions below 59. This allows
+      jsonpickle to build with CPython 3.11 and 3.12 alphas. (#424)
+    * Remove accidental dependency on pytz in pandas tests. (+421)
+    * Fix issue with decoding bson.bson.Int64 objects (#422)
 
 v3.0.0
 ======
     * Drop support for CPython<3.7. CPython 3.6 and below have reached EOL
-      and no longer receieve security updates. (#375)
+      and no longer receive security updates. (#375)
     * Add support for CPython 3.11. (#395) (+396)
     * Remove jsonlib and yajl backends (py2 only)
     * Add ``include_properties`` option to the pickler. This should only
@@ -312,7 +449,7 @@ v0.7.1
 ======
 
     * Added support for Python 3.4.
-    * Added support for :class:`posix.stat_result`.
+    * Added support for `posix.stat_result`.
 
 v0.7.0
 ======
@@ -341,7 +478,7 @@ v0.6.0
 
     * Python 3 support!
     * :class:`time.struct_time` is now serialized using the built-in
-      :class:`jsonpickle.handlers.SimpleReduceHandler`.
+      `jsonpickle.handlers.SimpleReduceHandler`.
 
 v0.5.0
 ======

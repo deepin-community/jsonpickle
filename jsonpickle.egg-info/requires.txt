@@ -1,30 +1,47 @@
 
-[:python_version < "3.8"]
-importlib_metadata
+[cov]
+pytest-cov
 
-[:python_version > "3.10"]
-setuptools<59
+[dev]
+black
+pyupgrade
 
 [docs]
-sphinx
-jaraco.packaging>=3.2
+furo
 rst.linker>=1.9
+sphinx>=3.5
+
+[packaging]
+build
+setuptools>=61.2
+setuptools_scm[toml]>=6.0
+twine
 
 [testing]
-pytest!=3.7.3,>=3.5
+pytest!=8.1.*,>=6.0
+pytest-benchmark
+pytest-benchmark[histogram]
 pytest-checkdocs>=1.2.3
-pytest-flake8>=1.1.1
-pytest-black-multipy
-pytest-cov
+pytest-enabler>=1.0.1
+pytest-ruff>=0.2.1
+bson
 ecdsa
 feedparser
 gmpy2
 numpy
 pandas
 pymongo
+PyYAML
 scikit-learn
-sqlalchemy
-
-[testing.libs]
 simplejson
+sqlalchemy
 ujson
+
+[testing:python_version < "3.12"]
+atheris~=2.3.0
+
+[testing:python_version <= "3.10"]
+scipy
+
+[testing:python_version > "3.10"]
+scipy>=1.9.3

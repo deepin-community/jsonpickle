@@ -1,9 +1,4 @@
-from __future__ import absolute_import, division, unicode_literals
-
-from .compat import string_types
-
-
-class JSONBackend(object):
+class JSONBackend:
     """Manages encoding and decoding using various backends.
 
     It tries these modules in this order:
@@ -18,11 +13,7 @@ class JSONBackend(object):
         """Ensures that we've loaded at least one JSON backend."""
         if self._verified:
             return
-        raise AssertionError(
-            'jsonpickle requires at least one of the '
-            'following:\n'
-            '    python2.6, simplejson'
-        )
+        raise AssertionError('jsonpickle could not load any json modules')
 
     def encode(self, obj, indent=None, separators=None):
         """
@@ -101,6 +92,9 @@ class JSONBackend(object):
         self.load_backend('simplejson')
         self.load_backend('json')
         self.load_backend('ujson')
+        self.load_backend(
+            'yaml', dumps='dump', loads='safe_load', loads_exc='YAMLError'
+        )
 
         # Defaults for various encoders
         json_opts = ((), {'sort_keys': False})
@@ -137,7 +131,6 @@ class JSONBackend(object):
         return True
 
     def load_backend(self, name, dumps='dumps', loads='loads', loads_exc=ValueError):
-
         """Load a JSON backend by name.
 
         This method loads a backend and sets up references to that
@@ -176,7 +169,7 @@ class JSONBackend(object):
         ):
             return False
 
-        if isinstance(loads_exc, string_types):
+        if isinstance(loads_exc, str):
             # This backend's decoder exception is part of the backend
             if not self._store(self._decoder_exceptions, name, mod, loads_exc):
                 return False

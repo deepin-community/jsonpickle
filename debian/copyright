@@ -6,11 +6,17 @@ Files-Excluded: jsonpickleJS/ext/*
 
 Files: *
 Copyright: 2007-2011 John Paulett <john@paulett.org>
-           2009-2021 David Aguilar <davvid@gmail.com>
+           2009-2024 David Aguilar <davvid@gmail.com>
 License: BSD-3-clause
 
 Files: tests/collections_test.py
 Copyright: 2014 Alexis Petrounias <www.petrounias.org>
+License: BSD-3-clause
+
+Files:
+ tests/handler_test.py
+ tests/datetime_test.py
+Copyright: 2013 Jason R. Coombs <jaraco@jaraco.com>
 License: BSD-3-clause
 
 Files: jsonpickleJS/*

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import datetime
 
 import pytest
@@ -28,22 +26,21 @@ def pandas_extension():
     jsonpickle.ext.pandas.unregister_handlers()
 
 
-def roundtrip(obj):
-    return jsonpickle.decode(jsonpickle.encode(obj))
+def roundtrip(obj, **kwargs):
+    return jsonpickle.decode(jsonpickle.encode(obj, **kwargs))
 
 
 def test_series_roundtrip():
     ser = pd.Series(
         {
             'an_int': np.int_(1),
-            'a_float': np.float_(2.5),
+            'a_float': np.float64(2.5),
             'a_nan': np.nan,
             'a_minus_inf': -np.inf,
             'an_inf': np.inf,
             'a_str': np.str_('foo'),
-            'a_unicode': np.unicode_('bar'),
             'date': np.datetime64('2014-01-01'),
-            'complex': np.complex_(1 - 2j),
+            'complex': np.complex128(1 - 2j),
             # TODO: the following dtypes are not currently supported.
             # 'object': np.object_({'a': 'b'}),
         }
@@ -56,14 +53,17 @@ def test_dataframe_roundtrip():
     df = pd.DataFrame(
         {
             'an_int': np.int_([1, 2, 3]),
-            'a_float': np.float_([2.5, 3.5, 4.5]),
+            'a_float': np.float64([2.5, 3.5, 4.5]),
             'a_nan': np.array([np.nan] * 3),
             'a_minus_inf': np.array([-np.inf] * 3),
             'an_inf': np.array([np.inf] * 3),
             'a_str': np.str_('foo'),
-            'a_unicode': np.unicode_('bar'),
-            'date': np.array([np.datetime64('2014-01-01')] * 3),
-            'complex': np.complex_([1 - 2j, 2 - 1.2j, 3 - 1.3j]),
+            'date': np.array([np.datetime64('2014-01-01')] * 3, dtype="datetime64[s]"),
+            'date_ns': np.array(
+                [np.datetime64('2014-01-01')] * 3, dtype="datetime64[ns]"
+            ),
+            'timedelta': np.array([np.timedelta64(1, "Y")] * 3, dtype="timedelta64[Y]"),
+            'complex': np.complex128([1 - 2j, 2 - 1.2j, 3 - 1.3j]),
             # TODO: the following dtypes are not currently supported.
             # 'object': np.object_([{'a': 'b'}]*3),
         }
@@ -72,18 +72,40 @@ def test_dataframe_roundtrip():
     assert_frame_equal(decoded_df, df)
 
 
+def test_dataframe_nested_containers():
+    # adapted from #407
+    a = pd.DataFrame(
+        {"date": ["20220921abc", 20220921.5], "date2": [20220921, "20220921"]}
+    )
+    b = roundtrip(a, keys=True)
+    assert a['date'][0] == b['date'][0]
+
+
+def test_dataframe_mixed_dtypes():
+    # adapted from #358
+    df = pd.DataFrame({'col1': [[1, 2, 3], ['a', 'b', 'c']]})
+    assert isinstance((df['col1'].iloc[0]), list)
+    result = roundtrip(df)
+    assert isinstance((result['col1'].iloc[0]), list)
+
+    # adapted from #457
+    # Create simple data frame of mixed data types
+    df1 = pd.DataFrame(([1, 2], [4, 'foo']))
+    df2 = roundtrip(df1)
+    assert (df1[0] == df2[0]).all()
+
+
 def test_multindex_dataframe_roundtrip():
     df = pd.DataFrame(
         {
             'idx_lvl0': ['a', 'b', 'c'],
             'idx_lvl1': np.int_([1, 1, 2]),
             'an_int': np.int_([1, 2, 3]),
-            'a_float': np.float_([2.5, 3.5, 4.5]),
+            'a_float': np.float64([2.5, 3.5, 4.5]),
             'a_nan': np.array([np.nan] * 3),
             'a_minus_inf': np.array([-np.inf] * 3),
             'an_inf': np.array([np.inf] * 3),
             'a_str': np.str_('foo'),
-            'a_unicode': np.unicode_('bar'),
         }
     )
     df = df.set_index(['idx_lvl0', 'idx_lvl1'])
@@ -180,7 +202,7 @@ def test_period_roundtrip():
 
 
 def test_interval_roundtrip():
-    obj = pd.Interval(2, 4, closed=str('left'))
+    obj = pd.Interval(2, 4, closed='left')
     decoded_obj = roundtrip(obj)
     assert decoded_obj == obj
 
@@ -306,7 +328,4 @@ def test_multilevel_columns():
     assert isinstance(cloned_data_frame, pd.DataFrame)
     assert data_frame.columns.names == cloned_data_frame.columns.names
     assert_frame_equal(data_frame, cloned_data_frame)
-
-
-if __name__ == '__main__':
-    pytest.main([__file__])
+    assert names == cloned_data_frame.columns.names
