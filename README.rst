@@ -20,8 +20,9 @@
 
 jsonpickle
 ==========
+
 jsonpickle is a library for the two-way conversion of complex Python objects
-and `JSON <http://json.org/>`_.  jsonpickle builds upon the existing JSON
+and `JSON <http://json.org/>`_.  jsonpickle builds upon existing JSON
 encoders, such as simplejson, json, and ujson.
 
 .. warning::
@@ -37,10 +38,38 @@ For complete documentation, please visit the
 Bug reports and merge requests are encouraged at the
 `jsonpickle repository on github <https://github.com/jsonpickle/jsonpickle>`_.
 
-jsonpickle officially supports CPython 2.7 and CPython 3.6 or greater. Version support below CPython 3.7 will be dropped upon release of jsonpickle 3.0.
+Usage
+=====
+The following is a very simple example of how one can use jsonpickle in their scripts/projects. Note the usage of jsonpickle.encode and decode, and how the data is written/encoded to a file and then read/decoded from the file.
+
+.. code-block:: python
+
+    import jsonpickle
+    from dataclasses import dataclass
+   
+    @dataclass
+    class Example:
+        data: str
+   
+   
+    ex = Example("value1")
+    encoded_instance = jsonpickle.encode(ex)
+    assert encoded_instance == '{"py/object": "__main__.Example", "data": "value1"}'
+   
+    with open("example.json", "w+") as f:
+        f.write(encoded_instance)
+   
+    with open("example.json", "r+") as f:
+        written_instance = f.read()
+        decoded_instance = jsonpickle.decode(written_instance)
+    assert decoded_instance == ex
+
+For more examples, see the `examples directory on GitHub <https://github.com/jsonpickle/jsonpickle/tree/main/examples>`_ for example scripts. These can be run on your local machine to see how jsonpickle works and behaves, and how to use it. Contributions from users regarding how they use jsonpickle are welcome!
+
 
 Why jsonpickle?
 ===============
+
 Data serialized with python's pickle (or cPickle or dill) is not easily readable outside of python. Using the json format, jsonpickle allows simple data types to be stored in a human-readable format, and more complex data types such as numpy arrays and pandas dataframes, to be machine-readable on any platform that supports json. E.g., unlike pickled data, jsonpickled data stored in an Amazon S3 bucket is indexible by Amazon's Athena.
 
 Security
@@ -80,44 +109,20 @@ Install from github for the latest changes:
 
     pip install git+https://github.com/jsonpickle/jsonpickle.git
 
-If you have the files checked out for development:
 
-::
+Numpy/Pandas Support
+====================
 
-    git clone https://github.com/jsonpickle/jsonpickle.git
-    cd jsonpickle
-    python setup.py develop
-
-
-Numpy Support
-=============
-jsonpickle includes a built-in numpy extension.  If would like to encode
-sklearn models, numpy arrays, and other numpy-based data then you must
-enable the numpy extension by registering its handlers::
+jsonpickle includes built-in numpy and pandas extensions.  If you would
+like to encode sklearn models, numpy arrays, pandas DataFrames, and other
+numpy/pandas-based data, then you must enable the numpy and/or pandas
+extensions by registering their handlers::
 
     >>> import jsonpickle.ext.numpy as jsonpickle_numpy
-    >>> jsonpickle_numpy.register_handlers()
-
-Pandas Support
-==============
-jsonpickle includes a built-in pandas extension.  If would like to encode
-pandas DataFrame or Series objects then you must enable the pandas extension
-by registering its handlers::
-
     >>> import jsonpickle.ext.pandas as jsonpickle_pandas
+    >>> jsonpickle_numpy.register_handlers()
     >>> jsonpickle_pandas.register_handlers()
 
-jsonpickleJS
-============
-`jsonpickleJS <https://github.com/cuthbertLab/jsonpickleJS>`_
-is a javascript implementation of jsonpickle by Michael Scott Cuthbert.
-jsonpickleJS can be extremely useful for projects that have parallel data
-structures between Python and Javascript.
-
-License
-=======
-Licensed under the BSD License. See COPYING for details.
-See jsonpickleJS/LICENSE for details about the jsonpickleJS license.
 
 Development
 ===========
@@ -128,24 +133,43 @@ Use `make` to run the unit tests::
 
 `pytest` is used to run unit tests internally.
 
-A `tox` target is provided to run tests using tox.
-Setting ``multi=1`` tests using all installed and supported Python versions::
+A `tox` target is provided to run tests using all installed and supported Python versions::
 
         make tox
-        make tox multi=1
 
 `jsonpickle` itself has no dependencies beyond the Python stdlib.
 `tox` is required for testing when using the `tox` test runner only.
 
-The testing requirements are specified in `requirements-dev.txt`.
+The testing requirements are specified in `setup.cfg`.
 It is recommended to create a virtualenv and run tests from within the
-virtualenv, or use a tool such as `vx <https://github.com/davvid/vx/>`_
-to activate the virtualenv without polluting the shell environment::
+virtualenv.::
 
-        python3 -mvenv env3x
-        vx env3x pip install --requirement requirements-dev.txt
-        vx env3x make test
+        python3 -mvenv env3
+        source env3/bin/activate
+        pip install --editable '.[dev]'
+        make test
+
+You can also use a tool such as `vx <https://github.com/davvid/vx/>`_
+to activate the virtualenv without polluting your shell environment::
+
+        python3 -mvenv env3
+        vx env3 pip install --editable '.[dev]'
+        vx env3 make test
+
+If you can't use a venv, you can install the testing packages as follows::
+
+        pip install .[testing]
 
 `jsonpickle` supports multiple Python versions, so using a combination of
 multiple virtualenvs and `tox` is useful in order to catch compatibility
 issues when developing.
+
+GPG Signing
+===========
+
+Unfortunately, while versions of jsonpickle before 3.0.1 should still be signed, GPG signing support was removed from PyPi (https://blog.pypi.org/posts/2023-05-23-removing-pgp/) back in May 2023.
+
+License
+=======
+
+Licensed under the BSD License. See COPYING for details.

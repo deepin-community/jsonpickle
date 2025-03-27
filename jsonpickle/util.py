@@ -8,9 +8,8 @@
 """Helper functions for pickling and unpickling.  Most functions assist in
 determining the type of an object.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import base64
+import binascii
 import collections
 import inspect
 import io
@@ -18,13 +17,14 @@ import operator
 import sys
 import time
 import types
+from collections.abc import Iterator as abc_iterator
 
-from . import compat, tags
-from .compat import abc_iterator, class_types, iterator_types, numeric_types
+from . import tags
 
+_ITERATOR_TYPE = type(iter(''))
 SEQUENCES = (list, set, tuple)
 SEQUENCES_SET = {list, set, tuple}
-PRIMITIVES = {compat.ustr, bool, type(None)} | set(numeric_types)
+PRIMITIVES = {str, bool, int, float, type(None)}
 FUNCTION_TYPES = {
     types.FunctionType,
     types.MethodType,
@@ -67,7 +67,7 @@ def is_type(obj):
     True
     """
     # use "isinstance" and not "is" to allow for metaclasses
-    return isinstance(obj, class_types)
+    return isinstance(obj, type)
 
 
 def has_method(obj, name):
@@ -207,8 +207,8 @@ def is_bytes(obj):
 
 
 def is_unicode(obj):
-    """Helper method to see if the object is a unicode string"""
-    return type(obj) is compat.ustr
+    """DEPRECATED: Helper method to see if the object is a unicode string"""
+    return type(obj) is str
 
 
 def is_tuple(obj):
@@ -301,7 +301,7 @@ def is_module_function(obj):
         and hasattr(obj, '__module__')
         and hasattr(obj, '__name__')
         and obj.__name__ != '<lambda>'
-    )
+    ) or is_cython_function(obj)
 
 
 def is_module(obj):
@@ -382,10 +382,33 @@ def is_reducible(obj):
     # Condensing it into one line seems to save the parser a lot of time.
     # fmt: off
     # pylint: disable=line-too-long
-    if type(obj) in NON_REDUCIBLE_TYPES or obj is object or is_dictionary_subclass(obj) or isinstance(obj, types.ModuleType) or is_reducible_sequence_subclass(obj) or is_list_like(obj) or isinstance(getattr(obj, '__slots__', None), iterator_types) or (is_type(obj) and obj.__module__ == 'datetime'):  # noqa: E501
+    if type(obj) in NON_REDUCIBLE_TYPES or obj is object or is_dictionary_subclass(obj) or isinstance(obj, types.ModuleType) or is_reducible_sequence_subclass(obj) or is_list_like(obj) or isinstance(getattr(obj, '__slots__', None), _ITERATOR_TYPE) or (is_type(obj) and obj.__module__ == 'datetime'):  # noqa: E501
         return False
     # fmt: on
     return True
+
+
+def is_cython_function(obj):
+    """Returns true if the object is a reference to a Cython function"""
+    return (
+        callable(obj)
+        and hasattr(obj, '__repr__')
+        and repr(obj).startswith('<cyfunction ')
+    )
+
+
+def is_readonly(obj, attr, value):
+    # CPython 3.11+ has 0-cost try/except, please use up-to-date versions!
+    try:
+        setattr(obj, attr, value)
+        return False
+    except AttributeError:
+        # this is okay, it means the attribute couldn't be set
+        return True
+    except TypeError:
+        # this should only be happening when obj is a dict
+        # as these errors happen when attr isn't a str
+        return True
 
 
 def in_dict(obj, key, default=False):
@@ -517,8 +540,11 @@ def importable_name(cls):
     module = translate_module_name(cls.__module__)
     if not module:
         if hasattr(cls, '__self__'):
-            module = cls.__self__.__class__.__module__
-    return '{}.{}'.format(module, name)
+            if hasattr(cls.__self__, '__module__'):
+                module = cls.__self__.__module__
+            else:
+                module = cls.__self__.__class__.__module__
+    return f'{module}.{name}'
 
 
 def b64encode(data):
@@ -532,7 +558,10 @@ def b64decode(payload):
     """
     Decode payload - must be ascii text.
     """
-    return base64.b64decode(payload)
+    try:
+        return base64.b64decode(payload)
+    except (TypeError, binascii.Error):
+        return b''
 
 
 def b85encode(data):
@@ -546,16 +575,21 @@ def b85decode(payload):
     """
     Decode payload - must be ascii text.
     """
-    return base64.b85decode(payload)
+    try:
+        return base64.b85decode(payload)
+    except (TypeError, ValueError):
+        return b''
 
 
 def itemgetter(obj, getter=operator.itemgetter(0)):
-    return compat.ustr(getter(obj))
+    return str(getter(obj))
 
 
-def items(obj):
+def items(obj, exclude=()):
     """
     TODO: Replace all calls to this with plain dict.items()
     """
     for k, v in obj.items():
+        if k in exclude:
+            continue
         yield k, v

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import ast
 import json
 import sys
@@ -8,8 +6,6 @@ import zlib
 
 import numpy as np
 
-from .. import compat
-from ..compat import numeric_types
 from ..handlers import BaseHandler, register, unregister
 from ..util import b64decode, b64encode
 
@@ -29,7 +25,7 @@ class NumpyBaseHandler(BaseHandler):
         if hasattr(dtype, 'tostring'):
             data['dtype'] = dtype.tostring()
         else:
-            dtype = compat.ustr(dtype)
+            dtype = str(dtype)
             prefix = '(numpy.record, '
             if dtype.startswith(prefix):
                 dtype = dtype[len(prefix) : -1]
@@ -149,7 +145,7 @@ class NumpyNDArrayHandlerBinary(NumpyNDArrayHandler):
         """encode numpy to json"""
         if self.size_threshold is None or self.size_threshold >= obj.size:
             # encode as text
-            data = super(NumpyNDArrayHandlerBinary, self).flatten(obj, data)
+            data = super().flatten(obj, data)
         else:
             # encode as binary
             if obj.dtype == object:
@@ -192,8 +188,8 @@ class NumpyNDArrayHandlerBinary(NumpyNDArrayHandler):
         values = data['values']
         if isinstance(values, list):
             # decode text representation
-            arr = super(NumpyNDArrayHandlerBinary, self).restore(data)
-        elif isinstance(values, numeric_types):
+            arr = super().restore(data)
+        elif isinstance(values, (int, float)):
             # single-value array
             arr = np.array([values], dtype=self.restore_dtype(data))
         else:
@@ -258,7 +254,7 @@ class NumpyNDArrayHandlerView(NumpyNDArrayHandlerBinary):
             valid values for 'compression' are {zlib, bz2, None}
             if compression is None, no compression is applied
         """
-        super(NumpyNDArrayHandlerView, self).__init__(size_threshold, compression)
+        super().__init__(size_threshold, compression)
         self.mode = mode
 
     def flatten(self, obj, data):
@@ -266,7 +262,7 @@ class NumpyNDArrayHandlerView(NumpyNDArrayHandlerBinary):
         base = obj.base
         if base is None and obj.flags.forc:
             # store by value
-            data = super(NumpyNDArrayHandlerView, self).flatten(obj, data)
+            data = super().flatten(obj, data)
             # ensure that views on arrays stored as text
             # are interpreted correctly
             if not obj.flags.c_contiguous:
@@ -311,7 +307,7 @@ class NumpyNDArrayHandlerView(NumpyNDArrayHandlerBinary):
                     "not know how to serialize."
                 )
                 raise ValueError(msg)
-            data = super(NumpyNDArrayHandlerView, self).flatten(obj.copy(), data)
+            data = super().flatten(obj.copy(), data)
 
         return data
 
@@ -320,10 +316,13 @@ class NumpyNDArrayHandlerView(NumpyNDArrayHandlerBinary):
         base = data.get('base', None)
         if base is None:
             # decode array with owndata=True
-            arr = super(NumpyNDArrayHandlerView, self).restore(data)
+            arr = super().restore(data)
         else:
             # decode array view, which references the data of another array
             base = self.context.restore(base, reset=False)
+            if not isinstance(base, np.ndarray):
+                # the object is probably a nested list
+                base = np.array(base)
             assert (
                 base.flags.forc
             ), "Current implementation assumes base is C or F contiguous"
@@ -341,10 +340,25 @@ class NumpyNDArrayHandlerView(NumpyNDArrayHandlerBinary):
         return arr
 
 
-def register_handlers():
+def register_handlers(
+    ndarray_mode='warn',
+    ndarray_size_threshold=16,
+    ndarray_compression=zlib,
+):
+    """Register handlers for numpy types
+
+    :param ndarray_abc_xyz: Forward constructor arguments to NumpyNDArrayHandlerView.
+        Options with an 'ndarray_' prefix correspond to the same-named
+        NumpyNDArrayHandlerView constructor options, sans the 'ndarray_' prefix.
+    """
+    ndarray_handler = NumpyNDArrayHandlerView(
+        mode=ndarray_mode,
+        size_threshold=ndarray_size_threshold,
+        compression=ndarray_compression,
+    )
+    register(np.ndarray, ndarray_handler, base=True)
     register(np.dtype, NumpyDTypeHandler, base=True)
     register(np.generic, NumpyGenericHandler, base=True)
-    register(np.ndarray, NumpyNDArrayHandlerView(), base=True)
     # Numpy 1.20 has custom dtypes that must be registered separately.
     register(np.dtype(np.void).__class__, NumpyDTypeHandler, base=True)
     register(np.dtype(np.float32).__class__, NumpyDTypeHandler, base=True)
@@ -353,6 +367,7 @@ def register_handlers():
 
 
 def unregister_handlers():
+    """Remove numpy handlers from the handler registry"""
     unregister(np.dtype)
     unregister(np.generic)
     unregister(np.ndarray)

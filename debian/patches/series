@@ -1,2 +1,1 @@
-disable-unsupported-sphinx-extension.patch
-disable-test-extensions.patch
+0001-disable-unsupported-sphinx-extension.patch

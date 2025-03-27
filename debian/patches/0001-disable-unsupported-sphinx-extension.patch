@@ -1,0 +1,22 @@
+From: Jan Dittberner <jandd@debian.org>
+Date: Thu, 8 Oct 2015 09:25:42 -0700
+Subject: disable-unsupported-sphinx-extension
+
+Disable Sphinx extensions not available in Debian or requiring remote access.
+
+Forwarded: not-needed
+Last-Update: 2024-03-06
+---
+ docs/history.rst | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/docs/history.rst b/docs/history.rst
+index 8e21750..907000b 100644
+--- a/docs/history.rst
++++ b/docs/history.rst
+@@ -5,4 +5,4 @@
+ History
+ *******
+ 
+-.. include:: ../CHANGES (links).rst
++.. include:: ../CHANGES.rst

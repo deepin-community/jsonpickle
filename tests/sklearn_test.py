@@ -1,9 +1,9 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import pytest
 
 try:
     import numpy as np
+    import sklearn.datasets
+    from sklearn.linear_model import LogisticRegression
     from sklearn.tree import DecisionTreeClassifier
 except ImportError:
     pytest.skip('sklearn is not available', allow_module_level=True)
@@ -53,5 +53,18 @@ def test_decision_tree():
         assert actual.get_depth() == classifier.get_depth()
 
 
-if __name__ == '__main__':
-    pytest.main([__file__])
+def test_nested_array_serialization():
+    iris = sklearn.datasets.load_iris()
+    X = iris.data[:, :2]
+    y = (iris.target != 0) * 1
+
+    pipe = LogisticRegression(solver="lbfgs")
+    pipe.fit(X, y)
+    pipe.predict(X)
+
+    # Try serializing/deserializing.
+    # Pipe is a LogisticRegression object that contains a nested array
+    js = jsonpickle.dumps(pipe)
+    pipe2 = jsonpickle.loads(js)
+    # coef_ only appears on an instance that has already been fit to something
+    assert np.all(pipe.coef_ == pipe2.coef_)

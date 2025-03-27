@@ -1,4 +1,4 @@
-from __future__ import absolute_import, division, unicode_literals
+"""jsonpickle.compat is a deprecated private module and will be removed in the future"""
 
 import queue  # noqa
 import sys
@@ -15,5 +15,4 @@ ustr = str
 
 
 def iterator(class_):
-    # TODO: Replace all instances of this
     return class_

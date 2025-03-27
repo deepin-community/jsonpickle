@@ -37,7 +37,7 @@ Choosing and Loading Backends
 
 jsonpickle allows the user to specify what JSON backend to use
 when encoding and decoding. By default, jsonpickle will try to use, in
-the following order: :mod:`simplejson` and :mod:`json`.
+the following order: ``simplejson`` and :mod:`json`.
 The preferred backend can be set via :func:`jsonpickle.set_preferred_backend`.
 Additional JSON backends can be used via :func:`jsonpickle.load_backend`.
 
@@ -90,6 +90,12 @@ protocol for representing object instances.
    items are assigned to the new instance's dictionary.  If a class defines both
    :meth:`__getstate__` and :meth:`__setstate__`, the state object needn't be a
    dictionary and these methods can do what they want.
+
+.. py:attribute:: object._jsonpickle_exclude = set()
+
+    Classes can specify attributes that they want to exclude from being pickled
+    by defining an attribute named `_jsonpickle_exclude`. This set should contain
+    the names of attributes of that class to exclude from being pickled.
 
 
 :mod:`jsonpickle.handlers` -- Custom Serialization Handlers
